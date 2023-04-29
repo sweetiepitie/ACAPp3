@@ -72,18 +72,11 @@ int main (int argc, char **argv)
         *arr2 = malloc(sizeof(int)*n2),
         *nInter = malloc(sizeof(int));
     
-    printf("\narr1 : \n");
-    for (int i = 0; i < n1; i++){
+    for (int i = 0; i < n1; i++)
         arr1[i] = i;
-        printf("%d   ", arr1[i]);
-    }
 
-
-    printf("\n\narr2 : \n");
-    for (int i = 0; i < n2; i++){
+    for (int i = 0; i < n2; i++)
         arr2[i] = 2*i;
-        printf("%d   ", arr2[i]);
-    }
     
     pthread_t threads[num_threads];
     struct arguments info[num_threads];
@@ -100,15 +93,12 @@ int main (int argc, char **argv)
         info[i].nInter = nInter;
         info[i].lock_inter = &lockI;
         pthread_create(&threads[i], 0, Interseccion, (void *) &info[i]);
-        
     }
 
     for (int i = 0; i < num_threads; i++)
         pthread_join(threads[i], 0);
 
     int nUnion = (n1 + n2) - *nInter;
-    printf("\n\nEl tamaño del conjunto de interseccion es %d tam de union es %d\n", *nInter, nUnion);
-    
     double jaccard = (double)*nInter/nUnion;
     printf("\nEl coeficiente de Jaccard es %f\n\n", jaccard);
 
