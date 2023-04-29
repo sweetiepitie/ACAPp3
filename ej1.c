@@ -55,7 +55,7 @@ int main(int argc, char ** argv)
     printf ("\nIntroduzca un numero de elementos del vector: ");
     do{
         scanf("%d", &num);
-    }while (num < 0);
+    }while (num <= 0);
 
     srand(time(NULL));
 
