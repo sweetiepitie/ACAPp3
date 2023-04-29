@@ -4,8 +4,8 @@
 #include <stdlib.h>
 
 #define RAND_MAX 2147483647
-#define MIN -100
-#define MAX 100
+#define MIN -100000
+#define MAX 100000
 #define NUM_THREADS 4
 
 
@@ -23,7 +23,8 @@ void getIntervals(size_t num_threads, int arr_size, int id, int *low_int, int *u
            per_thread = arr_size / num_threads,
            lsize = per_thread + (id < remainder);
     
-    *low_int = per_thread*id + (id > remainder) ? remainder : id;
+    int mod = (id > remainder) ? remainder : id;
+    *low_int = per_thread*id + mod;
     *upp_int = *low_int + lsize;
 }
 
@@ -89,7 +90,13 @@ int main(int argc, char ** argv)
     for (int i = 1; i < limit; i++)
         max = (result[i] > max) ? result[i] : max;
 
-    printf("\n\nEl numero maximo que aparece en el array es %f\n\n", max);
+    printf("\n\nResultado empleando parallelismo : numero maximo es %f\n", max);
+
+    max = arr[0];
+    for (int i = 1; i < num; i++)
+        max = (arr[i] > max) ? arr[i] : max;
+
+    printf("Resultado version secuencial : numero maximo es %f\n\n", max);
 
     free(arr);
     free(result);
