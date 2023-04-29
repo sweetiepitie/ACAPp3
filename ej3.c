@@ -36,6 +36,7 @@ void *Interseccion(void * args)
         cont = true;
         for (int j = 0; j < info->arr2_size && cont; j++)
         {
+            //cont = value > info->arr2[i];
             if (value == info->arr2[j])
             {
                 ocurrences++;
@@ -100,7 +101,20 @@ int main (int argc, char **argv)
 
     int nUnion = (n1 + n2) - *nInter;
     double jaccard = (double)*nInter/nUnion;
-    printf("\nEl coeficiente de Jaccard es %f\n\n", jaccard);
+    printf("\nParalelo : el coeficiente de Jaccard es %f", jaccard);
+
+    int ocurrences = 0;
+    for (int i = 0; i < n1; i++){
+        int value = arr1[i];
+        for (int j = 0; j < n2; j++)
+        {
+            if (value == arr2[j])
+                ocurrences++;
+        }
+    }
+    int u = (n1 + n2) - ocurrences;
+    printf("\nParalelo : el coeficiente de Jaccard es %f\n\n", (double)ocurrences/u);
+
 
     pthread_mutex_destroy(&lockI);
 
