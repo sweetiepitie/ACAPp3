@@ -2,16 +2,31 @@
 #include <stdio.h>
 #include <pthread.h>
 #include <stdbool.h>
+#include <time.h>
+#include <sys/time.h>
 
 struct arguments{
     int *nInter;
     int *arr1;
     int *arr2;
-    int low_int;
-    int upp_int;
-    int arr2_size;
+    int low_int1;
+    int upp_int1;
+    int low_int2;
+    int upp_int2;
     pthread_mutex_t* lock_inter;
 };
+
+
+
+double get_wall_time(){
+	struct timeval t;
+	if (gettimeofday(&t, NULL)){
+		printf("lol\n");
+		return 0;
+	}
+
+	return (double)t.tv_sec + (double)t.tv_usec * .000001;
+}
 
 void getIntervals(size_t num_threads, int arr_size, int id, int *low_int, int *upp_int)
 {
@@ -31,18 +46,17 @@ void *Interseccion(void * args)
     struct arguments* info = args;
     bool cont = true;
 
-    for (int i = info->low_int; i < info->upp_int; i++){
+    for (int i = info->low_int1; i < info->upp_int1; i++){
         int value = info->arr1[i];
-        cont = true;
-        for (int j = 0; j < info->arr2_size && cont; j++)
+        for (int j = info->low_int2; j < info->upp_int2 && cont; j++)
         {
-            //cont = value > info->arr2[i];
             if (value == info->arr2[j])
             {
                 ocurrences++;
                 cont = false;
             }
         }
+        cont = true;
     }
 
     pthread_mutex_lock(info->lock_inter);
@@ -84,25 +98,52 @@ int main (int argc, char **argv)
     pthread_mutex_t lockI;
     pthread_mutex_init(&lockI, 0);
     *nInter = 0;
-
-    for (int i = 0; i < num_threads; i++){
-        info[i].arr1 = arr1;
-        info[i].arr2 = arr2;
-        info[i].arr2_size = n2;
-
-        getIntervals(num_threads, n1, i, &info[i].low_int, &info[i].upp_int);
-        info[i].nInter = nInter;
-        info[i].lock_inter = &lockI;
-        pthread_create(&threads[i], 0, Interseccion, (void *) &info[i]);
-    }
-
+    
+    int check[num_threads];
     for (int i = 0; i < num_threads; i++)
-        pthread_join(threads[i], 0);
+        check[i] = 0;
+
+    double wall0 = get_wall_time();
+    int index = 0;
+    for (int i = 0; i < num_threads && index < n2; i++){
+        
+        getIntervals(num_threads, n1, i, &info[i].low_int1, &info[i].upp_int1);
+
+        if (!i)
+            index = info[i].low_int2 = 0;
+        else
+            index = info[i].low_int2 = info[i-1].upp_int2;
+        
+            
+        while (arr2[index] <= arr1[info[i].upp_int1-1] && index < n2)
+            index++;
+        
+        info[i].upp_int2 = index;
+
+
+        if (info[i].upp_int2 - info[i].low_int2 > 0){
+            info[i].arr1 = arr1;
+            info[i].arr2 = arr2;
+            info[i].nInter = nInter;
+            info[i].lock_inter = &lockI;
+            pthread_create(&threads[i], 0, Interseccion, (void *) &info[i]);
+            check[i]++;
+        }
+
+    }
+    
+    for (int i = 0; i < num_threads; i++){
+        if (check[i])
+            pthread_join(threads[i], 0);
+    }
 
     int nUnion = (n1 + n2) - *nInter;
     double jaccard = (double)*nInter/nUnion;
-    printf("\nParalelo : el coeficiente de Jaccard es %f", jaccard);
 
+    double wall1 = get_wall_time();
+    printf("\nParalelo : el coeficiente de Jaccard es %f, tiempo consumido: %f", jaccard, wall1-wall0);
+
+    wall0 = get_wall_time();
     int ocurrences = 0;
     for (int i = 0; i < n1; i++){
         int value = arr1[i];
@@ -113,8 +154,8 @@ int main (int argc, char **argv)
         }
     }
     int u = (n1 + n2) - ocurrences;
-    printf("\nParalelo : el coeficiente de Jaccard es %f\n\n", (double)ocurrences/u);
-
+    wall1 = get_wall_time();
+    printf("\nSecuencial : el coeficiente de Jaccard es %f, tiempo consumido : %f\n\n", (double)ocurrences/u, wall1-wall0);
 
     pthread_mutex_destroy(&lockI);
 
