@@ -7,7 +7,6 @@
 
 #define MASTER 0
 #define TAG 0
-#define NUM_THREADS 4
 
 struct arguments{
     int l_interval;
@@ -56,13 +55,14 @@ void getIntervals(size_t parallel_ent, int arr_size, int id, int *low_int, int *
 int main(int argc, char **argv)
 {
     int size, rank;
-    int intervals;
-    if (argc != 2){
-		printf("\n\nUse: mpiexec -n num_processes prog intervals\n");
+    int intervals, num_threads;
+    if (argc != 3){
+		printf("\n\nUse: mpiexec -n num_processes prog intervals num_threads\n");
         exit(-1);
     }
 
     intervals = strtol(argv[1], NULL, 10);
+    num_threads = strtol(argv[2], NULL, 10);
 
     MPI_Init(&argc, &argv);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
@@ -82,21 +82,21 @@ int main(int argc, char **argv)
         
         double *part_pi = malloc(sizeof(double));
         int interval_size = u_limit - l_limit;
-        pthread_t threads[NUM_THREADS];
-        struct arguments info[NUM_THREADS];
+        pthread_t threads[num_threads];
+        struct arguments info[num_threads];
         pthread_mutex_t lock;
         pthread_mutex_init(&lock, NULL);
         *part_pi = 0;
         
-        for (int i = 0; i < NUM_THREADS; i++){
+        for (int i = 0; i < num_threads; i++){
             info[i].intervals = intervals;
             info[i].lock = &lock;
             info[i].part_pi = part_pi;
-            getIntervals(NUM_THREADS, interval_size, i, &info[i].l_interval, &info[i].u_interval);
+            getIntervals(num_threads, interval_size, i, &info[i].l_interval, &info[i].u_interval);
             pthread_create(&threads[i], NULL, (void *) piRectangles, (void *) &info[i]);
         }
 
-        for (int i = 0; i < NUM_THREADS; i++)
+        for (int i = 0; i < num_threads; i++)
             pthread_join(threads[i], 0);
 
         MPI_Reduce(part_pi, &global_pi, 1, MPI_DOUBLE, MPI_SUM, MASTER, MPI_COMM_WORLD);
@@ -114,23 +114,23 @@ int main(int argc, char **argv)
 
         double *part_pi = malloc(sizeof(double));
         int interval_size = u_limit - l_limit;
-        pthread_t threads[NUM_THREADS];
-        struct arguments info[NUM_THREADS];
+        pthread_t threads[num_threads];
+        struct arguments info[num_threads];
         pthread_mutex_t lock;
         pthread_mutex_init(&lock, NULL);
         *part_pi = 0;
         
-        for (int i = 0; i < NUM_THREADS; i++){
+        for (int i = 0; i < num_threads; i++){
             info[i].intervals = intervals;
             info[i].lock = &lock;
             info[i].part_pi = part_pi;
-            getIntervals(NUM_THREADS, interval_size, i, &info[i].l_interval, &info[i].u_interval);
+            getIntervals(num_threads, interval_size, i, &info[i].l_interval, &info[i].u_interval);
             info[i].l_interval += l_limit;
             info[i].u_interval += l_limit;
             pthread_create(&threads[i], NULL, (void *) piRectangles, (void *) &info[i]);
         }
 
-        for (int i = 0; i < NUM_THREADS; i++)
+        for (int i = 0; i < num_threads; i++)
             pthread_join(threads[i], 0);
         
         MPI_Reduce(part_pi, NULL, 1, MPI_DOUBLE, MPI_SUM, MASTER, MPI_COMM_WORLD);

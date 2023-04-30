@@ -67,12 +67,8 @@ int main(int argc, char ** argv)
            *result = malloc(sizeof(double));
     struct arguments info[NUM_THREADS];
     
-
-    printf("\nEl array creado es : \n");
-    for (int i = 0; i < num; i++){
+    for (int i = 0; i < num; i++)
         arr[i] = double_range(MIN, MAX);
-        printf("%f   ", arr[i]);
-    }
 
 
     pthread_t threads[NUM_THREADS];
